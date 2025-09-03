@@ -56,12 +56,42 @@ void queryWeather() {
     // Disconnect
     http.end();
 
+    drawBoxes();
+    
+    tft.setTextColor(TFT_BLACK);
+    tft.setTextSize(6);
+
+    // Printing the temp
+    tft.setCursor(190, 127);
+    tft.print(temperature);
+    tft.print(TEMPUNIT);
+
+    // Printing the precipitation
+    tft.setCursor(350, 127);
+    tft.print(percentPrecip);
+    tft.print("%");
+
+
     // Displaying scrapped data
-    tft.print("TODAY:    ");
+    tft.setCursor(0, tft.height()-50);
+    tft.setTextColor(TFT_WHITE);
+    tft.setTextSize(3);
+    tft.print("TDY: ");
     tft.println(shortForecast);
-    tft.print("TOMORROW: ");
+    tft.print("TMR: ");
     tft.println(shortForecastTmr);
 
+}
+
+void drawBoxes() {
+    tft.drawRoundRect(174, 80, 134, 134, 10, TFT_WHITE);
+    tft.fillRoundRect(174, 80, 134, 134, 10, TFT_WHITE);
+
+    tft.drawRoundRect(327, 80, 134, 134, 10, TFT_WHITE);
+    tft.fillRoundRect(327, 80, 134, 134, 10, TFT_WHITE);
+
+    tft.drawRect(19, 80, 134, 134, TFT_GREEN);
+    tft.fillRect(19, 80, 134, 134, TFT_GREEN);
 }
 
 
@@ -140,6 +170,10 @@ void loop() {
     }
 
     // Location Content
+    tft.print(&timeinfo, "%B ");
+    tft.print(&timeinfo, "%d");
+
+    tft.setCursor(tft.width()-188, 0);
     tft.println("Athens, GA");
 
     tft.print(&timeinfo, "%I");
@@ -150,16 +184,6 @@ void loop() {
     // Gets the latest weather data
     tft.println("");
     queryWeather();
-
-    // Weather Content
-    tft.println("");
-    tft.print("Temperature: ");
-    tft.print(temperature);
-    tft.println(TEMPUNIT);
-
-    tft.print("Precipitation: ");
-    tft.print(percentPrecip);
-    tft.println("%");
 
     delay(60000);
 
