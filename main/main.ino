@@ -5,7 +5,6 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 
-
 // Defines constants
 #define CONNECTION_TIMEOUT 10
 
@@ -24,7 +23,9 @@ const long  gmtOffset_sec = -14400;
 const int   daylightOffset_sec = 0;
 
 // Weather Information
-int temperature;
+int temperature = 0;
+const char * TEMPUNIT = "F";
+int percentPrecip = 0;
 
 void queryWeather() {
     client.setInsecure();
@@ -47,10 +48,20 @@ void queryWeather() {
 
     // Read values
     temperature = doc["properties"]["periods"][0]["temperature"].as<int>();
-    Serial.println(temperature);
+    percentPrecip = doc["properties"]["periods"][0]["probabilityOfPrecipitation"]["value"].as<int>();
+    const char * shortForecast = doc["properties"]["periods"][0]["shortForecast"];
+    const char * shortForecastTmr = doc["properties"]["periods"][0]["shortForecast"];
+    const char * icon = doc["properties"]["periods"][1]["icon"];
 
     // Disconnect
     http.end();
+
+    // Displaying scrapped data
+    tft.print("TODAY:    ");
+    tft.println(shortForecast);
+    tft.print("TOMORROW: ");
+    tft.println(shortForecastTmr);
+
 }
 
 
@@ -70,8 +81,7 @@ void setup() {
 
     // Initializes the wifi
     WiFi.mode(WIFI_STA); //Optional
-    WiFi.begin(ssid, password);
-    //Serial.println("\nConnecting");
+    WiFi.begin(SSID, PASSWORD);
     tft.println("\nConnecting");
     uint8_t timeout_counter = 0;
 
@@ -87,11 +97,6 @@ void setup() {
             ESP.restart();
         }
     }
-
-    // Wifi connection information
-    //Serial.println("\nConnected to the WiFi network");
-    //Serial.print("Local ESP32 IP: ");
-    //Serial.println(WiFi.localIP());
 
     tft.println("\nConnected to the WiFi network");
     tft.print("Local ESP32 IP: ");
@@ -109,14 +114,9 @@ void loop() {
 
     // Loading message
     tft.println("Loading...");
-    tft.setCursor(0,0);
+    tft.setCursor(0, 0);
     tft.fillScreen(TFT_BLACK);
     tft.setTextSize(3);
-
-    uint8_t timeout_counter = 0;
-
-    // Gets the latest weather data
-    queryWeather();
 
     // Getting the time
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
@@ -132,23 +132,34 @@ void loop() {
     char timeHour[3];
     strftime(timeHour,3, "%H", &timeinfo);
     if (0 == atoi(timeHour)) {
-        endFormat = " PM";
+        endFormat = " AM";
     } else if (atoi(timeHour) < 12) {
         endFormat = " AM";
     } else {
         endFormat = " PM";
     }
 
-    // Content
-    tft.println("");
+    // Location Content
     tft.println("Athens, GA");
+
     tft.print(&timeinfo, "%I");
     tft.print(":");
     tft.print(&timeinfo, "%M");
     tft.println(endFormat);
+
+    // Gets the latest weather data
     tft.println("");
-    tft.println("Temperature: ");
-    tft.println("Humidity: ");
+    queryWeather();
+
+    // Weather Content
+    tft.println("");
+    tft.print("Temperature: ");
+    tft.print(temperature);
+    tft.println(TEMPUNIT);
+
+    tft.print("Precipitation: ");
+    tft.print(percentPrecip);
+    tft.println("%");
 
     delay(60000);
 
