@@ -23,6 +23,36 @@ const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = -14400;
 const int   daylightOffset_sec = 0;
 
+// Weather Information
+int temperature;
+
+void queryWeather() {
+    client.setInsecure();
+    client.setTimeout(60000);
+
+    // Send request
+    http.useHTTP10(true);
+    http.begin(client, "https://api.weather.gov/gridpoints/FFC/88,99/forecast");
+    http.GET();
+
+    // Parse response
+    DynamicJsonDocument doc(12288);
+    DeserializationError error = deserializeJson(doc, http.getStream());
+
+    if (error) {
+        Serial.print("deserializeJson() failed: ");
+        Serial.println(error.c_str());
+        return;
+    }
+
+    // Read values
+    temperature = doc["properties"]["periods"][0]["temperature"].as<int>();
+    Serial.println(temperature);
+
+    // Disconnect
+    http.end();
+}
+
 
 void setup() {
     // Creates serial monitor page
@@ -41,13 +71,13 @@ void setup() {
     // Initializes the wifi
     WiFi.mode(WIFI_STA); //Optional
     WiFi.begin(ssid, password);
-    Serial.println("\nConnecting");
+    //Serial.println("\nConnecting");
     tft.println("\nConnecting");
     uint8_t timeout_counter = 0;
 
     // Waits until connected
     while(WiFi.status() != WL_CONNECTED){
-        Serial.print(".");
+        //Serial.print(".");
         tft.print(".");
         delay(200);
         timeout_counter++;
@@ -59,9 +89,9 @@ void setup() {
     }
 
     // Wifi connection information
-    Serial.println("\nConnected to the WiFi network");
-    Serial.print("Local ESP32 IP: ");
-    Serial.println(WiFi.localIP());
+    //Serial.println("\nConnected to the WiFi network");
+    //Serial.print("Local ESP32 IP: ");
+    //Serial.println(WiFi.localIP());
 
     tft.println("\nConnected to the WiFi network");
     tft.print("Local ESP32 IP: ");
@@ -76,7 +106,17 @@ void loop() {
     tft.fillScreen(TFT_BLACK);
     tft.setTextSize(3);
 
+
+    // Loading message
+    tft.println("Loading...");
+    tft.setCursor(0,0);
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextSize(3);
+
     uint8_t timeout_counter = 0;
+
+    // Gets the latest weather data
+    queryWeather();
 
     // Getting the time
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
@@ -110,6 +150,6 @@ void loop() {
     tft.println("Temperature: ");
     tft.println("Humidity: ");
 
-    delay(1000000);
+    delay(60000);
 
 }
